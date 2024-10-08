@@ -6,15 +6,17 @@ const App = () => {
   const [isDrawing,setIsDrawing]=useState(false);
   const [context,setContext]=useState(null);
   const [drawingData,setDrawingData]=useState([]);
+  const [stroke,setStroke]=useState([{x:0,y:0}]);
   const [shape,setShape]=useState('sketch');
-  const [startCoords,setStartCoords]=useState({x:0,y:0});
+  const [startCoords,setStartCoords]=useState([{x:0,y:0}]);
 
   useEffect(()=>{
     const canvas=canvasRef.current;
-    canvas.width=600;
-    canvas.height=600;
+    canvas.width=700;
+    canvas.height=700;
     const ctx=canvas.getContext('2d');
     ctx.lineWidth= 5;
+    ctx.strokeStyle = "black";
     ctx.lineCap='round';
     setContext(ctx);
   },[]);
@@ -28,11 +30,25 @@ const App = () => {
     }
   },[drawingData,context])
 
-  const handleMouseDown=(e)=>{
+  const handleMouseDown=({nativeEvent})=>{
     setIsDrawing(true);
     const canvas=canvasRef.current;
     const rect=canvas.getBoundingClientRect();
-    setStartCoords({x:e.clientX-rect.left,y:e.clientY-rect.top});
+    setStartCoords({x:nativeEvent.offsetX,y:nativeEvent.offsetY});
+    if(shape==='sketch'){
+    const {offsetX,offsetY}=nativeEvent;// it will the relative coodinate to the canvas
+    const coordinate={
+      x:offsetX,
+      y:offsetY
+    }
+    setStroke((prev)=>[...prev,coordinate])
+    context.beginPath();
+    context.moveTo(offsetX,offsetY);
+    context.lineTo(offsetX,offsetY);
+    context.stroke();
+    setIsDrawing(true);
+    nativeEvent.preventDefault();
+  }
   }
 
   const handleMouseUp=(e)=>{
@@ -52,39 +68,30 @@ const App = () => {
       };
       drawOnCanvas(shape,coords,context);
       setDrawingData(prev=>[...prev,coords]);
+    }else{
+    context.closePath();
     }
-    context.beginPath();
   }
 
-  const handleMouseMove=(e)=>{
+  const handleMouseMove=({nativeEvent})=>{
     if(!isDrawing)return;
-
-    const canvas=canvasRef.current;
-    const rect=canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
+    const {offsetX,offsetY}=nativeEvent;
     if(shape==='sketch'){
-      const coords={
-        x0: startCoords.x,
-        y0: startCoords.y,
-        x1: x,
-        y1: y,
-        shape: shape,
-      };
-      drawOnCanvas(shape,coords,context);
-      setDrawingData((prev)=>[...prev,coords]);
-      setStartCoords({x,y});
+      const coordinate={
+        x:offsetX,
+        y:offsetY
+      }
+      setStroke(prev=>[...prev,coordinate])
+      context.lineTo(offsetX,offsetY);
+      context.stroke();
+      nativeEvent.preventDefault();
+      setDrawingData((prev)=>[...prev,coordinate]);
+      setStartCoords({offsetX,offsetY});
     }
   };
 
   const drawOnCanvas=(shape,{x0,y0,x1,y1},ctx)=>{
-    if(shape=='sketch'){
-      ctx.lineTo(x1,y1);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(x1,y1);
-    }else if(shape==='rectangle'){
+   if(shape==='rectangle'){
       ctx.beginPath();
       ctx.rect(x0,y0,x1-x0,y1-y0);
       ctx.stroke();
@@ -112,7 +119,7 @@ const App = () => {
   const isPointOnLine=(x,y,{x0,y0,x1,y1})=>{
     const distance = Math.abs((y1 - y0) * x - (x1 - x0) * y + x1 * y0 - y1 * x0) /
     Math.sqrt(Math.pow(y1 - y0, 2) + Math.pow(x1 - x0, 2));
-  return distance < 5; 
+  return distance < 0.1; 
   };
 
   const isPointInShape = (x, y, { x0, y0, x1, y1, shape }) => {
@@ -126,7 +133,6 @@ const App = () => {
     }
     return false;
   };
-
 
   return (
     <div>
