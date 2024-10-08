@@ -6,7 +6,7 @@ const App = () => {
   const [isDrawing,setIsDrawing]=useState(false);
   const [context,setContext]=useState(null);
   const [drawingData,setDrawingData]=useState([]);
-  const [stroke,setStroke]=useState({x:0,y:0});
+  const [stroke,setStroke]=useState([{x:0,y:0}]);
   const [shape,setShape]=useState('sketch');
   const [startCoords,setStartCoords]=useState([{x:0,y:0}]);
 
@@ -85,8 +85,8 @@ const App = () => {
       context.lineTo(offsetX,offsetY);
       context.stroke();
       nativeEvent.preventDefault();
-      setDrawingData((prev)=>[...prev,coords]);
-      setStartCoords({x,y});
+      setDrawingData((prev)=>[...prev,coordinate]);
+      setStartCoords({offsetX,offsetY});
     }
   };
 
