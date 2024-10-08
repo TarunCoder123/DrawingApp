@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Stage, Layer, Line, Rect, Circle } from 'react-konva';
+import './Dapp.css'
 
 const SketchBoard = () => {
   const [isDrawing, setIsDrawing] = useState(false);
-  const [lines, setLines] = useState([]); // Stores the strokes (lines)
-  const [tool, setTool] = useState('pen'); // Can be 'pen' or 'eraser'
+  const [lines, setLines] = useState([]);
+  const [tool, setTool] = useState('pen');
   const [eraserPos, setEraserPos] = useState({ x: 0, y: 0 });
 
-  // Handle Mouse Down for Drawing
   const handleMouseDown = (e) => {
     if (tool === 'pen') {
       setIsDrawing(true);
@@ -16,7 +16,6 @@ const SketchBoard = () => {
     }
   };
 
-  // Handle Mouse Move for Drawing and Erasing
   const handleMouseMove = (e) => {
     const stage = e.target.getStage();
     const point = stage.getPointerPosition();
@@ -26,19 +25,15 @@ const SketchBoard = () => {
       lastLine.points = lastLine.points.concat([point.x, point.y]);
       setLines(lines.slice(0, -1).concat([lastLine]));
     } else if (tool === 'eraser') {
-      // Track the eraser's position
       setEraserPos({ x: point.x, y: point.y });
       eraseStroke(point);
     }
   };
 
-  // Handle Mouse Up for Drawing
   const handleMouseUp = () => setIsDrawing(false);
 
-  // Erase stroke if eraser overlaps a stroke
   const eraseStroke = (eraserPosition) => {
     const remainingLines = lines.filter((line) => {
-      // Check if eraser is near any point of the stroke
       return !line.points.some((point, index) => 
         index % 2 === 0 &&
         Math.abs(point - eraserPosition.x) < 10 && 
@@ -50,40 +45,49 @@ const SketchBoard = () => {
 
   return (
     <div>
-      <button onClick={() => setTool('pen')}>Pen</button>
-      <button onClick={() => setTool('eraser')}>Eraser</button>
+      <header>SketchBoard</header>
+      <div id="toolButtons">
+        <button 
+          className={tool === 'pen' ? 'active' : ''} 
+          onClick={() => setTool('pen')}
+        >
+          Pen
+        </button>
+        <button 
+          className={tool === 'eraser' ? 'active' : ''} 
+          onClick={() => setTool('eraser')}
+        >
+          Eraser
+        </button>
+      </div>
 
-      <Stage
-        width={600}
-        height={400}
-        style={{ border: '2px solid black' }} // Sketchboard with a solid border
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp} // Handle mouse leaving the canvas
-      >
-        <Layer>
-          <Rect width={600} height={400} stroke="black" />
-          {lines.map((line, i) => (
-            <Line
-              key={i}
-              points={line.points}
-              stroke="black"
-              strokeWidth={2}
-              lineCap="round"
-              lineJoin="round"
-            />
-          ))}
-          {tool === 'eraser' && (
-            <Circle
-              x={eraserPos.x}
-              y={eraserPos.y}
-              radius={10}
-              fill="gray"
-            />
-          )}
-        </Layer>
-      </Stage>
+      <div id="stageWrapper">
+        <Stage
+          width={600}
+          height={400}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
+          <Layer>
+            <Rect width={600} height={400} stroke="black" />
+            {lines.map((line, i) => (
+              <Line
+                key={i}
+                points={line.points}
+                stroke="black"
+                strokeWidth={2}
+                lineCap="round"
+                lineJoin="round"
+              />
+            ))}
+            {tool === 'eraser' && (
+              <Circle x={eraserPos.x} y={eraserPos.y} radius={5} fill="gray" />
+            )}
+          </Layer>
+        </Stage>
+      </div>
     </div>
   );
 };
